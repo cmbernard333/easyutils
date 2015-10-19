@@ -1,23 +1,18 @@
 #include <stdio.h>
+#include <unistd.h>
 #include "net_utils.h"
+#include "easy_ssl.h"
 
 int main(int argc, char** argv)
 {
-    const char* name = argv[1]; 
-    struct sockaddr* addr;
+    const char* name = argv[1];
     int rc = 0;
-    rc = resolve_name_to_addr(name, 48000, &addr);
-    if(rc)
-    {
-    	fprintf(stderr,"Failed to resolve %s. RC=%d\n",name,rc);
-    }
 
-    sockaddr_printf(stdout,addr);
-
-    rc = do_bind(addr);
+    rc = do_server(name,48000);
     if(rc)
     {
     	fprintf(stderr,"Failed to bind to %s:%d. RC=%d\n",name,48000,rc);
     }
+    close(rc);
     return 0;
 }

@@ -50,10 +50,17 @@ int resolve_name_to_addr(const char *name, int port, struct sockaddr **out) {
 }
 
 int do_bind(struct sockaddr *addr) {
+
   int sockfd, sfamily, rc, len;
 
+  if (addr->sa_family == AF_INET) {
+    len = sizeof(struct sockaddr_in);
+  } else if (addr->sa_family == AF_INET6) {
+    len = sizeof(struct sockaddr_in6);
+  }
+
   if (!addr) {
-    return 1;
+    return -1;
   }
 
   if (addr->sa_family == AF_INET) {
@@ -65,15 +72,60 @@ int do_bind(struct sockaddr *addr) {
   sockfd = socket(sfamily, SOCK_STREAM, 0);
   if (sockfd < 0) {
     perror("Failed to create socket.");
-    return 1;
+    return -1;
   }
-  rc = bind(sockfd, addr, sizeof(addr));
+  rc = bind(sockfd, addr, len);
   if (rc < 0) {
     perror("Failed to bind to address.");
-    return 1;
+    return -1;
   }
-  close(sockfd);
-  return 0;
+  return sockfd;
+}
+
+int do_listen(int sockfd, int backlogc) {
+  if (sockfd < 0) {
+    return -1;
+  }
+  return listen(sockfd, backlogc);
+}
+
+int do_server(const char *ip, int port) {
+  int rc, sockfd, len = 0;
+  socklen_t addr_size;
+  struct sockaddr *addr;
+
+  rc = resolve_name_to_addr(ip, port, &addr);
+  if (rc) {
+    perror("resolve");
+  }
+
+  if (addr->sa_family == AF_INET) {
+    len = sizeof(struct sockaddr_in);
+  } else if (addr->sa_family == AF_INET6) {
+    len = sizeof(struct sockaddr_in6);
+  }
+
+  sockfd = do_bind(addr);
+  if (sockfd< 0) {
+    perror("bind");
+    return -1;
+  }
+  fprintf(stdout,"Bind : success %s:%d\n",ip,port);
+
+  rc = do_listen(sockfd, 10);
+  if (rc != 0) {
+    perror("listen");
+    return -1;
+  }
+  fprintf(stdout,"Listen : success %s:%d\n",ip,port);
+
+  rc = accept(sockfd, addr, &addr_size);
+  if (rc < 0) {
+    perror("accept");
+    return -1;
+  }
+
+  return sockfd;
 }
 
 int sockaddr_printf(FILE *file, struct sockaddr *addr) {

@@ -1,7 +1,12 @@
-#include "easy_ssl.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "easy_ssl.h"
 
+#ifndef MS_CALLBACK
+#define MS_CALLBACK
+#endif
+
+extern int MS_CALLBACK verify_callback(int ok, X509_STORE_CTX *ctx);
 
 int ssl_initialize_app()
 {
@@ -27,7 +32,7 @@ int ssl_ctx_setup(SSL_CTX **_ctx, SSL_PROTOCOL ssl_protocol,
 	SSL_METHOD* meth = NULL;
 
 	/* initialize context */
-	meth = ssl_get_protocol_method(protcol);
+	meth = ssl_get_protocol_method(ssl_protocol);
 	ctx = SSL_CTX_new(meth);
 
 	/* load key, certificate, and certificate chain file */
@@ -44,7 +49,7 @@ int ssl_ctx_setup(SSL_CTX **_ctx, SSL_PROTOCOL ssl_protocol,
 	if(!SSL_CTX_use_certificate_chain_file(ctx,ca_path))
 	{
 		/* TODO: log error */
-		return SSL_CAC_CERT_LOAD_FAILED
+		return SSL_CAC_CERT_LOAD_FAILED;
 	}
 	if(!SSL_CTX_load_verify_locations(ctx,ca_path,NULL))
 	{
@@ -151,6 +156,13 @@ int MS_CALLBACK verify_callback(int ok, X509_STORE_CTX *ctx)
     char buf[256];
     X509 *err_cert;
     int err, depth;
+
+    FILE* bio_err;
+
+    if(bio_err==NULL)
+    {
+    	bio_err = BIO_new_fp(stderr,BIO_NOCLOSE);
+    }
     
     err_cert = X509_STORE_CTX_get_current_cert(ctx);
     err = X509_STORE_CTX_get_error(ctx);
@@ -161,6 +173,7 @@ int MS_CALLBACK verify_callback(int ok, X509_STORE_CTX *ctx)
     if (!ok) {
         BIO_printf(bio_err, "verify error:num=%d:%s\n", err,
                    X509_verify_cert_error_string(err));
+        /*
         if (verify_depth >= depth) {
             ok = 1;
             verify_error = X509_V_OK;
@@ -168,6 +181,7 @@ int MS_CALLBACK verify_callback(int ok, X509_STORE_CTX *ctx)
             ok = 0;
             verify_error = X509_V_ERR_CERT_CHAIN_TOO_LONG;
         }   
+        */
     }       
     switch (ctx->error) {
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:

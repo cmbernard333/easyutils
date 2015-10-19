@@ -24,7 +24,7 @@ typedef enum {
   PROTOCOL_TLSv12
 } SSL_PROTOCOL;
 
-static long SSL_DEFAULT_PROTOCOL_OPTIONS=SSL_OP_ALL|SSP_OP_NO_SSLv2|SSL_OP_NO_SSLv3|SSL_OP_NO_TLSv1;
+static long SSL_DEFAULT_PROTOCOL_OPTIONS=SSL_OP_ALL|SSL_OP_NO_SSLv2|SSL_OP_NO_SSLv3|SSL_OP_NO_TLSv1;
 
 /* 
 initializes the ssl libraries and error strings
@@ -73,7 +73,7 @@ extern int ssl_server_bio_strict(SSL **_ssl, SSL_CTX *ctx, const char *ip, int p
 gets the latest ssl error in the queue 
 return 1 if there was an error message; otherwise 0
 */
-extern int ssl_get_latest_error_str(char **message);
+extern int ssl_get_latest_error_str(SSL* ssl, char **message);
 /* 
 shuts down and closes an ssl connection 
 return 0 if the connection was closed successfully; otherwise error code
@@ -84,6 +84,6 @@ retrieves the ssl method associated with the given protocol
 return the method associated with the protocol
 if the protocol is not found it returns SSLv23_method()
 */
-SSL_METHOD *ssl_get_protocol_method(SSL_PROTOCOL protocol);
+extern SSL_METHOD *ssl_get_protocol_method(SSL_PROTOCOL protocol);
 
 #endif
